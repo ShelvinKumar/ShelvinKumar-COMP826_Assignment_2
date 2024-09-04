@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -24,8 +25,49 @@ class TrafficLightScreen extends StatefulWidget {
 
 class _TrafficLightScreenState extends State<TrafficLightScreen> {
   String junctionId = "junction_1";
-  String status = "red";
-  int timeLeft = 25;
+  String status = "red"; // Initial status
+  int timeLeft = 10; // Initial time left
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    startTimer();
+    fetchTrafficLightStatus();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 1), (Timer timer) {
+      if (timeLeft > 0) {
+        setState(() {
+          timeLeft--;
+        });
+      } else {
+        changeTrafficLightState();
+      }
+    });
+  }
+
+  void changeTrafficLightState() {
+    setState(() {
+      if (status == "red") {
+        status = "green";
+        timeLeft = 10; // Reset time for green light
+      } else if (status == "green") {
+        status = "yellow";
+        timeLeft = 5; // Reset time for yellow light
+      } else if (status == "yellow") {
+        status = "red";
+        timeLeft = 15; // Reset time for red light
+      }
+    });
+  }
 
   Future<void> fetchTrafficLightStatus() async {
     final response = await http.get(
@@ -44,19 +86,14 @@ class _TrafficLightScreenState extends State<TrafficLightScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    fetchTrafficLightStatus();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Virtual Traffic Lights'),
+        centerTitle: true, // Center the app bar title
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
         child: Column(
           children: [
             // Junction ID and Traffic Light Status
@@ -65,28 +102,49 @@ class _TrafficLightScreenState extends State<TrafficLightScreen> {
                 border: Border.all(color: Colors.black, width: 2),
                 borderRadius: BorderRadius.circular(10),
               ),
-              padding: EdgeInsets.all(10),
+              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 15),
               child: Column(
                 children: [
                   Text(
                     'Junction: $junctionId',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.circle, color: Colors.red, size: 50),
-                      Icon(Icons.circle, color: Colors.yellow, size: 50),
-                      Icon(Icons.circle, color: Colors.green, size: 50),
-                    ],
+                  SizedBox(height: 20),
+                  // Traffic Light Display
+                  Container(
+                    width: 120,
+                    height: 320,
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Icon(
+                          Icons.circle,
+                          color: status == "red" ? Colors.red : Colors.grey[800],
+                          size: 80,
+                        ),
+                        Icon(
+                          Icons.circle,
+                          color: status == "yellow" ? Colors.yellow : Colors.grey[800],
+                          size: 80,
+                        ),
+                        Icon(
+                          Icons.circle,
+                          color: status == "green" ? Colors.green : Colors.grey[800],
+                          size: 80,
+                        ),
+                      ],
+                    ),
                   ),
-                  SizedBox(height: 10),
+                  SizedBox(height: 20),
                   Text(
                     'Time Left: $timeLeft sec',
-                    style: TextStyle(fontSize: 18),
+                    style: TextStyle(fontSize: 20),
                   ),
-                  SizedBox(height: 10),
+                  SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: fetchTrafficLightStatus,
                     child: Text('Refresh Status'),
@@ -99,6 +157,7 @@ class _TrafficLightScreenState extends State<TrafficLightScreen> {
                     child: Text('Emergency vehicle nearby'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     ),
                   ),
                   SizedBox(height: 10),
@@ -109,6 +168,7 @@ class _TrafficLightScreenState extends State<TrafficLightScreen> {
                     child: Text('Road Closer'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     ),
                   ),
                 ],
