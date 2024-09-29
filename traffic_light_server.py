@@ -36,3 +36,4 @@ if __name__ == '__main__':
 
 #Server
 #http://172.23.39.233:5000/traffic_light/junction_1
+#// real-time, synconised traffic light (should talk to each other but not show the same traffic light (need to open 2 UI and demo that))
