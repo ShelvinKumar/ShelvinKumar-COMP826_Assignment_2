@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+// import 'dart:js' as js;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'constants.dart'; // Importing the constants.dart file
+import 'constants.dart';
 
 void main() {
   runApp(
@@ -22,13 +23,13 @@ class MyApp extends StatelessWidget {
       title: 'Virtual Traffic Lights',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        brightness: Brightness.light, // Light theme
+        brightness: Brightness.light,
       ),
       darkTheme: ThemeData(
         primarySwatch: Colors.blue,
-        brightness: Brightness.dark, // Dark theme
+        brightness: Brightness.dark,
       ),
-      themeMode: ThemeMode.system, // Use system theme
+      themeMode: ThemeMode.system,
       home: TrafficLightScreen(),
     );
   }
@@ -48,21 +49,6 @@ class TrafficLightScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Google Map Display
-          Expanded(
-            child: GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: LatLng(-36.8485, 174.7633), // Default to Auckland, NZ
-                zoom: 14.0,
-              ),
-              onMapCreated: (GoogleMapController controller) {
-                _controller.complete(controller);
-              },
-              markers: model.markers, // Display traffic light markers
-              polylines: model.polylines, // Display the route
-            ),
-          ),
-          // Rest of the UI
           Expanded(
             child: SingleChildScrollView(
               child: Padding(
@@ -70,25 +56,9 @@ class TrafficLightScreen extends StatelessWidget {
                     horizontal: 20.0, vertical: 10.0),
                 child: Column(
                   children: [
-                    // Responsive Street Name Selector
-                    DropdownButton<String>(
-                      value: model.selectedStreet,
-                      onChanged: (String? newValue) {
-                        model.setSelectedStreet(newValue!);
-                      },
-                      items: model.streetNames
-                          .map<DropdownMenuItem<String>>((String street) {
-                        return DropdownMenuItem<String>(
-                          value: street,
-                          child: Text(street),
-                        );
-                      }).toList(),
-                    ),
                     SizedBox(height: 20),
-                    // Responsive Traffic Light Display
                     Container(
-                      width: MediaQuery.of(context).size.width *
-                          0.5, // Responsive width
+                      width: MediaQuery.of(context).size.width * 0.5,
                       padding: EdgeInsets.symmetric(
                         vertical: MediaQuery.of(context).size.height * 0.02,
                         horizontal: MediaQuery.of(context).size.width * 0.05,
@@ -106,9 +76,7 @@ class TrafficLightScreen extends StatelessWidget {
                           ),
                           SizedBox(height: 20),
                           AnimatedContainer(
-                            duration: Duration(
-                                seconds:
-                                    1), // Smooth transition for color changes
+                            duration: Duration(seconds: 1),
                             width: 120,
                             height: 320,
                             decoration: BoxDecoration(
@@ -194,7 +162,6 @@ class TrafficLightScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    // Notification Area
                     Container(
                       margin: EdgeInsets.only(top: 20),
                       decoration: BoxDecoration(
@@ -213,6 +180,20 @@ class TrafficLightScreen extends StatelessWidget {
               ),
             ),
           ),
+          SizedBox(
+            height: 200,
+            child: GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: LatLng(-36.8485, 174.7633),
+                zoom: 14.0,
+              ),
+              onMapCreated: (GoogleMapController controller) {
+                _controller.complete(controller);
+              },
+              markers: model.markers,
+              polylines: model.polylines,
+            ),
+          ),
         ],
       ),
     );
@@ -220,28 +201,24 @@ class TrafficLightScreen extends StatelessWidget {
 }
 
 class TrafficLightModel with ChangeNotifier {
-  List<String> streetNames = [
-    "Queen Street"
-  ]; // List of New Zealand street names
-
-  String selectedStreet = "Queen Street"; // Default selected street
-  String status = "red"; // Initial status
-  int timeLeft = 15; // Initial time left for red light
+  String selectedStreet = "Queen Street";
+  String status = "red";
+  int timeLeft = 15;
   Timer? _timer;
-  Timer? _fetchTimer; // Timer for fetching real-time updates
+  Timer? _fetchTimer;
 
   Set<Marker> markers = {};
-  Set<Polyline> polylines = {}; // Set to store polylines
+  Set<Polyline> polylines = {};
 
   TrafficLightModel() {
     startTimer();
-    fetchTrafficLightStatusPeriodically(); // Start fetching data periodically
-    initializeMarkers(); // Initialize markers
+    fetchTrafficLightStatusPeriodically();
+    initializeMarkers();
   }
 
   void setSelectedStreet(String street) {
     selectedStreet = street;
-    fetchTrafficLightStatus(); // Fetch new status when street changes
+    fetchTrafficLightStatus();
   }
 
   void startTimer() {
@@ -258,15 +235,15 @@ class TrafficLightModel with ChangeNotifier {
   void changeTrafficLightState() {
     if (status == "red") {
       status = "green";
-      timeLeft = 20; // Duration for green light
+      timeLeft = 20;
     } else if (status == "green") {
       status = "yellow";
-      timeLeft = 4; // Duration for yellow light
+      timeLeft = 4;
     } else if (status == "yellow") {
       status = "red";
-      timeLeft = 15; // Duration for red light
+      timeLeft = 15;
     }
-    updateMarkers(); // Update markers when the light state changes
+    updateMarkers();
     notifyListeners();
   }
 
@@ -278,7 +255,6 @@ class TrafficLightModel with ChangeNotifier {
 
   Future<void> fetchTrafficLightStatus() async {
     try {
-      // Construct the URL using the selected street and API key
       final response = await http.get(
         Uri.parse(
             'https://maps.googleapis.com/maps/api/directions/json?origin=origin&destination=destination&key=$googleMapsApiKey'),
@@ -287,14 +263,11 @@ class TrafficLightModel with ChangeNotifier {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        // Parse the response based on the actual data structure returned by the API
-        // Assuming that 'currentStatus' and 'timeLeft' are the fields in the response
         if (data != null &&
             data['currentStatus'] != null &&
             data['timeLeft'] != null) {
-          status = data[
-              'currentStatus']; // Replace 'currentStatus' with actual field
-          timeLeft = data['timeLeft']; // Replace 'timeLeft' with actual field
+          status = data['currentStatus'];
+          timeLeft = data['timeLeft'];
         }
       } else {
         throw Exception('Failed to load traffic light status');
@@ -302,8 +275,8 @@ class TrafficLightModel with ChangeNotifier {
     } catch (e) {
       print('Error fetching traffic light status: $e');
     }
-    updateMarkers(); // Update markers after fetching new status
-    notifyListeners(); // Notify listeners after updating status
+    updateMarkers();
+    notifyListeners();
   }
 
   Future<void> getDirections(String origin, String destination) async {
@@ -316,7 +289,6 @@ class TrafficLightModel with ChangeNotifier {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        // Extract the points from the response and create a Polyline
         if (data['routes'] != null && data['routes'].isNotEmpty) {
           final polylinePoints =
               data['routes'][0]['overview_polyline']['points'];
@@ -378,7 +350,7 @@ class TrafficLightModel with ChangeNotifier {
   void initializeMarkers() {
     markers.add(Marker(
       markerId: MarkerId('marker_1'),
-      position: LatLng(-36.8485, 174.7633), // Example position
+      position: LatLng(-36.850905, 174.764496),
       infoWindow: InfoWindow(
         title: 'Virtual Traffic Light',
         snippet: 'Status: $status',
@@ -398,7 +370,7 @@ class TrafficLightModel with ChangeNotifier {
     markers.clear();
     markers.add(Marker(
       markerId: MarkerId('marker_1'),
-      position: LatLng(-36.8485, 174.7633), // Example position
+      position: LatLng(-36.850905, 174.764496),
       infoWindow: InfoWindow(
         title: 'Virtual Traffic Light',
         snippet: 'Status: $status',
