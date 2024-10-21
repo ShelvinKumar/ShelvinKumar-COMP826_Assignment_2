@@ -39,3 +39,6 @@ Run the App
 ## Use the following command to run the app on an emulator or physical device:
 
 flutter run
+
+Trello kanban borad
+https://trello.com/invite/b/67159f23d09e81dc7828c5ff/ATTI5fb60a52d975b0d776e0dca55ea0c4333A2416A2/comp826
